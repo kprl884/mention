@@ -7,14 +7,14 @@
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:name=".MentionApp"
+        android:name="com.techtactoe.mention.MentionApp"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity
             android:exported="true"
             android:windowSoftInputMode="adjustResize"
-            android:name=".MainActivity">
+            android:name="com.techtactoe.mention.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -23,7 +23,7 @@
         </activity>
 
         <activity
-            android:name=".AuthCallbackActivity"
+            android:name="com.techtactoe.mention.AuthCallbackActivity"
             android:exported="true"
             android:launchMode="singleTask">
             <intent-filter>
