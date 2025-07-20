@@ -1,21 +1,25 @@
-
+// In: src/commonMain/kotlin/com/jetbrains/kmpapp/platform/TwitterAuthenticator.kt
 package com.jetbrains.kmpapp.platform
 
 import org.koin.core.module.Module
 
 /**
- * An interface for handling the platform-specific Twitter authentication flow.
+ * The 'expect' interface defines the contract that all platform authenticators must follow.
+ * The common code will interact with this interface.
  */
 interface TwitterAuthenticator {
     /**
-     * Launches the Twitter authentication process.
-     * @return The authorization code from Twitter if successful.
+     * Launches the platform-specific web-based authentication flow.
+     * @param codeChallenge The S256-hashed code challenge generated for this login attempt.
+     * @return The authorization code from Twitter if the user approves.
      * @throws Exception if the user cancels or an error occurs.
      */
-    suspend fun launchAndGetAuthCode(): String
+    // The 'actual' keyword has been removed from here.
+    suspend fun launchAndGetAuthCode(codeChallenge: String): String
 }
 
 /**
- * Provides a Koin module with platform-specific dependencies, like the TwitterAuthenticator.
+ * The 'expect' function defines the contract for providing a platform-specific Koin module.
+ * This allows each platform (Android, iOS) to provide its own dependencies.
  */
 expect fun platformModule(): Module

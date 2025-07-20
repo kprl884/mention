@@ -2,13 +2,12 @@ package com.jetbrains.kmpapp.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jetbrains.kmpapp.platform.PKCEUtil
 import com.jetbrains.kmpapp.platform.TwitterAuthenticator
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.basicAuth
 import io.ktor.client.request.forms.submitForm
-import io.ktor.client.request.post
-import io.ktor.client.request.url
 import io.ktor.http.Parameters
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +21,8 @@ import kotlinx.serialization.Serializable
 // and not to commit them to version control.
 private const val CLIENT_ID = "bG1zajZGSXRRVDZveUtpY1p6TkI6MTpjaQ"
 private const val CLIENT_SECRET = "WGlmHwE-Je0cxgtiOjeoFB6pb3yBn9EdWGI5qK5ptwDdhm68nh"
-private const val REDIRECT_URI = "mention://callback" // Must match the one in your Twitter App and AndroidManifest
+private const val REDIRECT_URI =
+    "mention://callback" // Must match the one in your Twitter App and AndroidManifest
 
 @Serializable
 data class TokenResponse(
@@ -58,6 +58,7 @@ class AuthViewModel(
             is AuthEvent.LoginWithTwitter -> {
                 initiateTwitterLogin()
             }
+
             is AuthEvent.Logout -> {
                 logout()
             }
@@ -69,12 +70,14 @@ class AuthViewModel(
             try {
                 _state.value = _state.value.copy(isLoading = true, error = null)
 
-                // 1. Launch platform-specific web view to get the authorization code
-                val authCode = twitterAuthenticator.launchAndGetAuthCode()
+                val codeVerifier = PKCEUtil.generateCodeVerifier()
+                val codeChallenge = PKCEUtil.generateCodeChallenge(codeVerifier)
 
-                // 2. Exchange the authorization code for an access token
-                val tokenResponse = exchangeCodeForToken(authCode)
+                // 2. Platforma özel web görünümünü code_challenge ile başlat
+                val authCode = twitterAuthenticator.launchAndGetAuthCode(codeChallenge)
 
+                // 3. Yetki kodunu ve DOĞRU code_verifier'ı kullanarak token al
+                val tokenResponse = exchangeCodeForToken(authCode, codeVerifier)
                 // 3. Login successful
                 _state.value = _state.value.copy(
                     isLoading = false,
@@ -92,14 +95,14 @@ class AuthViewModel(
         }
     }
 
-    private suspend fun exchangeCodeForToken(code: String): TokenResponse {
+    private suspend fun exchangeCodeForToken(code: String, codeVerifier: String): TokenResponse {
         val response = httpClient.submitForm(
             url = "https://api.twitter.com/2/oauth2/token",
             formParameters = Parameters.build {
                 append("code", code)
                 append("grant_type", "authorization_code")
                 append("redirect_uri", REDIRECT_URI)
-                append("code_verifier", "challenge") // For PKCE, a unique verifier should be generated and stored for each request
+                append("code_verifier", codeVerifier) // <-- DİNAMİK DOĞRULAYICIYI KULLAN
             }
         ) {
             basicAuth(CLIENT_ID, CLIENT_SECRET)

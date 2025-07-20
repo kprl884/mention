@@ -7,10 +7,9 @@ import androidx.browser.customtabs.CustomTabsIntent
 import kotlinx.coroutines.CompletableDeferred
 import org.koin.core.module.Module
 import org.koin.dsl.module
-import androidx.core.net.toUri
 
 // TODO: IMPORTANT! Replace with your own Twitter App credentials.
-private const val CLIENT_ID = "bG1zajZGSXRRVDZveUtpY1p6TkI6MTpjaQ\n"
+private const val CLIENT_ID = "bG1zajZGSXRRVDZveUtpY1p6TkI6MTpjaQ"
 private const val REDIRECT_URI = "mention://callback"
 
 // A singleton object to hold the deferred result, bridging the gap between
@@ -33,28 +32,31 @@ actual fun platformModule(): Module = module {
  */
 class AndroidTwitterAuthenticator(private val context: Context) : TwitterAuthenticator {
 
-    override suspend fun launchAndGetAuthCode(): String {
+    // override'ı ve fonksiyon imzasını cancelling
+    override suspend fun launchAndGetAuthCode(codeChallenge: String): String {
         val authCodeDeferred = CompletableDeferred<String>()
         AuthCallbackManager.authCodeDeferred = authCodeDeferred
 
-        val authUrl = "https://twitter.com/i/oauth2/authorize".toUri().buildUpon()
+        val authUrl = Uri.parse("https://twitter.com/i/oauth2/authorize").buildUpon()
             .appendQueryParameter("response_type", "code")
             .appendQueryParameter("client_id", CLIENT_ID)
             .appendQueryParameter("redirect_uri", REDIRECT_URI)
-            .appendQueryParameter("scope", "tweet.read users.read follows.read")
+            .appendQueryParameter(
+                "scope",
+                "tweet.read users.read follows.read offline.access"
+            ) // offline.access eklendi
             .appendQueryParameter("state", "state")
-            .appendQueryParameter("code_challenge", "challenge")
-            .appendQueryParameter("code_challenge_method", "plain")
+            .appendQueryParameter("code_challenge", codeChallenge) // <-- DİNAMİK DEĞERİ KULLAN
+            .appendQueryParameter("code_challenge_method", "S256")  // <-- S256'YA GÜNCELLE
             .build()
 
+        // ... (intent kodu aynı kalacak)
         val customTabsIntent = CustomTabsIntent.Builder().build()
-        // Use the application context and add NEW_TASK flag to launch from a non-Activity context
         val intent = customTabsIntent.intent
         intent.setPackage("com.android.chrome")
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.applicationContext.startActivity(intent.apply { data = authUrl })
 
-        // Wait for the AuthCallbackActivity to complete the deferred
         return authCodeDeferred.await()
     }
-} 
+}
