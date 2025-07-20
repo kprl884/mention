@@ -63,11 +63,11 @@ kotlin {
 }
 
 android {
-    namespace = "com.jetbrains.kmpapp"
+    namespace = "com.jetbrains.mention"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.jetbrains.kmpapp"
+        applicationId = "com.jetbrains.mention"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
