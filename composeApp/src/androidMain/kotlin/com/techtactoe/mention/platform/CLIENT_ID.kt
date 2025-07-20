@@ -2,8 +2,8 @@ package com.techtactoe.mention.platform
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
-import androidx.core.net.toUri
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.core.module.Module
@@ -18,7 +18,7 @@ private const val AUTH_TIMEOUT_MS = 60000L // 60 seconds timeout
 // the suspend function and the Activity callback.
 object AuthCallbackManager {
     var authCodeDeferred: CompletableDeferred<String>? = null
-
+    
     fun clearDeferred() {
         authCodeDeferred = null
     }
@@ -43,7 +43,7 @@ class AndroidTwitterAuthenticator(private val context: Context) : TwitterAuthent
         AuthCallbackManager.authCodeDeferred = authCodeDeferred
 
         try {
-            val authUrl = "https://twitter.com/i/oauth2/authorize".toUri().buildUpon()
+            val authUrl = Uri.parse("https://twitter.com/i/oauth2/authorize").buildUpon()
                 .appendQueryParameter("response_type", "code")
                 .appendQueryParameter("client_id", CLIENT_ID)
                 .appendQueryParameter("redirect_uri", REDIRECT_URI)
@@ -60,14 +60,13 @@ class AndroidTwitterAuthenticator(private val context: Context) : TwitterAuthent
             val intent = customTabsIntent.intent
             intent.setPackage("com.android.chrome")
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            intent.data = authUrl // Fixed: Use intent.data instead of Intent.setData
-            context.applicationContext.startActivity(intent)
+            context.applicationContext.startActivity(intent.apply { data = authUrl })
 
             // Wait for the AuthCallbackActivity to complete the deferred with timeout
             return withTimeoutOrNull(AUTH_TIMEOUT_MS) {
                 authCodeDeferred.await()
             } ?: throw Exception("Twitter authentication timeout after ${AUTH_TIMEOUT_MS}ms")
-
+            
         } catch (e: Exception) {
             // Clean up the deferred on any exception
             AuthCallbackManager.clearDeferred()

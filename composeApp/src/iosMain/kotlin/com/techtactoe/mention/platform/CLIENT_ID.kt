@@ -50,7 +50,7 @@ class IOSTwitterAuthenticator : TwitterAuthenticator {
             return withTimeoutOrNull(AUTH_TIMEOUT_MS) {
                 authCodeDeferred.await()
             } ?: throw Exception("Twitter authentication timeout after ${AUTH_TIMEOUT_MS}ms")
-
+            
         } catch (e: Exception) {
             // Clean up the deferred on any exception
             IOSAuthCallbackManager.clearDeferred()
