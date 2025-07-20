@@ -31,7 +31,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <!-- This MUST match the redirect_uri scheme and host -->
-                <data android:scheme="kmpapp" android:host="callback" />
+                <data android:scheme="mention" android:host="callback" />
             </intent-filter>
         </activity>
     </application>
